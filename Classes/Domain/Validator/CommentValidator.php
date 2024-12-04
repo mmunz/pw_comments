@@ -10,7 +10,6 @@ namespace T3\PwComments\Domain\Validator;
  *  |     2023 Malek Olabi <m.olabi@neusta.de>
  */
 
-use Psr\Http\Message\RequestInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use T3\PwComments\Domain\Model\Comment;
 use T3\PwComments\Utility\Settings;
