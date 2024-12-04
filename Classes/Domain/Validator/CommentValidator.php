@@ -9,6 +9,8 @@ namespace T3\PwComments\Domain\Validator;
  *  |     2016-2017 Christian Wolfram <c.wolfram@chriwo.de>
  *  |     2023 Malek Olabi <m.olabi@neusta.de>
  */
+
+use Psr\Http\Message\RequestInterface;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 use T3\PwComments\Domain\Model\Comment;
 use T3\PwComments\Utility\Settings;
@@ -28,6 +30,7 @@ class CommentValidator extends AbstractValidator
      * @var array Settings defined in typoscript of pw_comments
      */
     protected $settings = [];
+
 
     /**
      * Initial function to validate
@@ -81,7 +84,7 @@ class CommentValidator extends AbstractValidator
      */
     protected function anyPropertyIsSet(Comment $comment)
     {
-        return ($GLOBALS['TSFE']->fe_user->user['uid'] ?? false) ||
+        return ($this->request->getAttribute('frontend.user')->user['uid'] ?? false) ||
                ($comment->getAuthorName() !== '' && $comment->getAuthorMail() !== '');
     }
 
@@ -93,7 +96,7 @@ class CommentValidator extends AbstractValidator
      */
     protected function mailIsValid(Comment $comment)
     {
-        return $GLOBALS['TSFE']->fe_user->user['uid'] ?? false
+        return $this->request->getAttribute('frontend.user')->user['uid'] ?? false
             || (is_string($comment->getAuthorMail()) && GeneralUtility::validEmail($comment->getAuthorMail()));
     }
 
@@ -115,10 +118,10 @@ class CommentValidator extends AbstractValidator
      */
     protected function lastCommentRespectsTimer()
     {
-        if (!$GLOBALS['TSFE']->fe_user->getKey('ses', 'tx_pwcomments_lastComment')) {
+        if (!$this->request->getAttribute('frontend.user')->getKey('ses', 'tx_pwcomments_lastComment')) {
             return true;
         }
-        $difference = time() - $GLOBALS['TSFE']->fe_user->getKey('ses', 'tx_pwcomments_lastComment');
+        $difference = time() - $this->request->getAttribute('frontend.user')->getKey('ses', 'tx_pwcomments_lastComment');
 
         return $difference > (int)($this->settings['secondsBetweenTwoComments'] ?? 300);
     }

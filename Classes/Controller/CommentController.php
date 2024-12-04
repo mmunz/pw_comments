@@ -146,7 +146,7 @@ class CommentController extends ActionController
         $this->commentStorageUid = is_numeric($this->settings['storagePid'] ?? null)
             ? $this->settings['storagePid']
             : $this->pageUid;
-        $this->currentUser = isset($GLOBALS['TSFE']->fe_user->user['uid']) ? $GLOBALS['TSFE']->fe_user->user : [];
+        $this->currentUser = $this->request->getAttribute('frontend.user')->user;
         $this->currentAuthorIdent = isset($this->currentUser['uid'])
             ? $this->currentUser['uid']
             : $this->cookieUtility->get('ahash');
@@ -246,10 +246,10 @@ class CommentController extends ActionController
             $newComment->setAuthor($author);
         } else {
             $newComment->setAuthor(null);
-            $GLOBALS['TSFE']->fe_user->setKey('ses', 'tx_pwcomments_unregistredUserName', $newComment->getAuthorName());
-            $GLOBALS['TSFE']->fe_user->setKey('ses', 'tx_pwcomments_unregistredUserMail', $newComment->getAuthorMail());
+            $this->request->getAttribute('frontend.user')->setKey('ses', 'tx_pwcomments_unregistredUserName', $newComment->getAuthorName());
+            $this->request->getAttribute('frontend.user')->setKey('ses', 'tx_pwcomments_unregistredUserMail', $newComment->getAuthorMail());
         }
-        $GLOBALS['TSFE']->fe_user->setKey('ses', 'tx_pwcomments_lastComment', time());
+        $this->request->getAttribute('frontend.user')->setKey('ses', 'tx_pwcomments_lastComment', time());
 
         $translateArguments = [
             'name' => $newComment->getAuthorName(),
@@ -318,14 +318,14 @@ class CommentController extends ActionController
         if ($newComment !== null && $newComment->getAuthorName()) {
             $unregistredUserName = $newComment->getAuthorName();
         } else {
-            $unregistredUserName = $GLOBALS['TSFE']->fe_user->getKey('ses', 'tx_pwcomments_unregistredUserName');
+            $unregistredUserName = $this->request->getAttribute('frontend.user')->getKey('ses', 'tx_pwcomments_unregistredUserName');
         }
 
         // Get mail of unregistred user
         if ($newComment !== null && $newComment->getAuthorMail()) {
             $unregistredUserMail = $newComment->getAuthorMail();
         } else {
-            $unregistredUserMail = $GLOBALS['TSFE']->fe_user->getKey('ses', 'tx_pwcomments_unregistredUserMail');
+            $unregistredUserMail = $this->request->getAttribute('frontend.user')->getKey('ses', 'tx_pwcomments_unregistredUserMail');
         }
 
         $this->view->assign('unregistredUserName', $unregistredUserName);
@@ -588,12 +588,12 @@ class CommentController extends ActionController
 
     protected function handleCustomMessages(): void
     {
-        if (isset($this->settings['ignoreVotingForOwnComments']) && $this->settings['ignoreVotingForOwnComments'] && GeneralUtility::_GP('doNotVoteForYourself') == 1) {
+        if (isset($this->settings['ignoreVotingForOwnComments']) && $this->settings['ignoreVotingForOwnComments'] && ($this->request->getParsedBody()['doNotVoteForYourself'] ?? $this->request->getQueryParams()['doNotVoteForYourself'] ?? null) == 1) {
             $this->addFlashMessage(
                 LocalizationUtility::translate('tx_pwcomments.custom.doNotVoteForYourself', 'PwComments')
             );
             $this->view->assign('hasCustomMessages', true);
-        } elseif ((!isset($this->settings['enableVoting']) || !$this->settings['enableVoting']) && GeneralUtility::_GP('votingDisabled') == 1) {
+        } elseif ((!isset($this->settings['enableVoting']) || !$this->settings['enableVoting']) && ($this->request->getParsedBody()['votingDisabled'] ?? $this->request->getQueryParams()['votingDisabled'] ?? null) == 1) {
             $this->addFlashMessage(
                 LocalizationUtility::translate('tx_pwcomments.custom.votingDisabled', 'PwComments')
             );
